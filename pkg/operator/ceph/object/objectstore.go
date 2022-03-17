@@ -436,9 +436,9 @@ func createMultisite(objContext *Context, endpointArg string) error {
 
 func joinMultisite(objContext *Context, endpointArg, zoneEndpoints, namespace string) error {
 	logger.Debugf("joining zone %v", objContext.Zone)
-	realmArg := fmt.Sprintf("--rgw-realm=%s", objContext.Realm)
-	zoneGroupArg := fmt.Sprintf("--rgw-zonegroup=%s", objContext.ZoneGroup)
-	zoneArg := fmt.Sprintf("--rgw-zone=%s", objContext.Zone)
+	//realmArg := fmt.Sprintf("--rgw-realm=%s", objContext.Realm)
+	//zoneGroupArg := fmt.Sprintf("--rgw-zonegroup=%s", objContext.ZoneGroup)
+	//zoneArg := fmt.Sprintf("--rgw-zone=%s", objContext.Zone)
 
 	zoneIsMaster, err := checkZoneIsMaster(objContext)
 	if err != nil {
@@ -447,32 +447,36 @@ func joinMultisite(objContext *Context, endpointArg, zoneEndpoints, namespace st
 	zoneGroupIsMaster := false
 
 	if zoneIsMaster {
-		// endpoints that are part of a master zone are supposed to be the endpoints for a zone group
-		_, err := RunAdminCommandNoMultisite(objContext, false, "zonegroup", "modify", realmArg, zoneGroupArg, endpointArg)
-		if err != nil {
-			return errorOrIsNotFound(err, "failed to add object store %q in rgw zone group %q", objContext.Name, objContext.ZoneGroup)
-		}
-		logger.Debugf("endpoints for zonegroup %q are now %q", objContext.ZoneGroup, zoneEndpoints)
-
+		// michael.gugino@uipath.com: patch out adding endpoints.
+		/*
+			// endpoints that are part of a master zone are supposed to be the endpoints for a zone group
+			_, err := RunAdminCommandNoMultisite(objContext, false, "zonegroup", "modify", realmArg, zoneGroupArg, endpointArg)
+			if err != nil {
+				return errorOrIsNotFound(err, "failed to add object store %q in rgw zone group %q", objContext.Name, objContext.ZoneGroup)
+			}
+			logger.Debugf("endpoints for zonegroup %q are now %q", objContext.ZoneGroup, zoneEndpoints)
+		*/
 		// check if zone group is master only if zone is master for creating the system user
 		zoneGroupIsMaster, err = checkZoneGroupIsMaster(objContext)
 		if err != nil {
 			return errors.Wrapf(err, "failed to find out whether zone group %q in is the master zone group", objContext.ZoneGroup)
 		}
 	}
-	_, err = RunAdminCommandNoMultisite(objContext, false, "zone", "modify", realmArg, zoneGroupArg, zoneArg, endpointArg)
-	if err != nil {
-		return errorOrIsNotFound(err, "failed to add object store %q in rgw zone %q", objContext.Name, objContext.Zone)
-	}
-	logger.Debugf("endpoints for zone %q are now %q", objContext.Zone, zoneEndpoints)
+	// michael.gugino@uipath.com: patch out adding endpoints.
+	/*
+		_, err = RunAdminCommandNoMultisite(objContext, false, "zone", "modify", realmArg, zoneGroupArg, zoneArg, endpointArg)
+		if err != nil {
+			return errorOrIsNotFound(err, "failed to add object store %q in rgw zone %q", objContext.Name, objContext.Zone)
+		}
+		logger.Debugf("endpoints for zone %q are now %q", objContext.Zone, zoneEndpoints)
 
-	if err := commitConfigChanges(objContext); err != nil {
-		nsName := fmt.Sprintf("%s/%s", objContext.clusterInfo.Namespace, objContext.Name)
-		return errors.Wrapf(err, "failed to commit config changes for CephObjectStore %q when joining multisite ", nsName)
-	}
+		if err := commitConfigChanges(objContext); err != nil {
+			nsName := fmt.Sprintf("%s/%s", objContext.clusterInfo.Namespace, objContext.Name)
+			return errors.Wrapf(err, "failed to commit config changes for CephObjectStore %q when joining multisite ", nsName)
+		}
 
-	logger.Infof("added object store %q to realm %q, zonegroup %q, zone %q", objContext.Name, objContext.Realm, objContext.ZoneGroup, objContext.Zone)
-
+		logger.Infof("added object store %q to realm %q, zonegroup %q, zone %q", objContext.Name, objContext.Realm, objContext.ZoneGroup, objContext.Zone)
+	*/
 	// create system user for realm for master zone in master zonegorup for multisite scenario
 	if zoneIsMaster && zoneGroupIsMaster {
 		err = createSystemUser(objContext, namespace)
