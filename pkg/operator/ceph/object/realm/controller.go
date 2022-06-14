@@ -209,6 +209,7 @@ func (r *ReconcileObjectRealm) reconcile(request reconcile.Request) (reconcile.R
 func (r *ReconcileObjectRealm) pullCephRealm(realm *cephv1.CephObjectRealm) (reconcile.Result, error) {
 	realmArg := fmt.Sprintf("--rgw-realm=%s", realm.Name)
 	urlArg := fmt.Sprintf("--url=%s", realm.Spec.Pull.Endpoint)
+	ignoreSSLArg := "--rgw_verify_ssl=false"
 	logger.Debug("getting keys to pull realm for CephObjectRealm %q", realm.Name)
 	accessKeyArg, secretKeyArg, err := object.GetRealmKeyArgs(r.context, realm.Name, realm.Namespace)
 	if err != nil {
@@ -220,7 +221,7 @@ func (r *ReconcileObjectRealm) pullCephRealm(realm *cephv1.CephObjectRealm) (rec
 	logger.Debugf("keys found to pull realm for CephObjectRealm %q, getting ready to pull from endpoint %q", realm.Name, realm.Spec.Pull.Endpoint)
 
 	objContext := object.NewContext(r.context, r.clusterInfo, realm.Name)
-	output, err := object.RunAdminCommandNoMultisite(objContext, false, "realm", "pull", realmArg, urlArg, accessKeyArg, secretKeyArg)
+	output, err := object.RunAdminCommandNoMultisite(objContext, false, "realm", "pull", realmArg, urlArg, accessKeyArg, secretKeyArg, ignoreSSLArg)
 
 	if err != nil {
 		return waitForRequeueIfRealmNotReady, errors.Wrapf(err, "realm pull failed for reason: %v", output)
